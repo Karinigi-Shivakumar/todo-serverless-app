@@ -1,0 +1,71 @@
+# # "service" is the name of this project. This will also be added to your AWS resource names.
+# service: todo-api
+# frameworkVersion: '4'
+
+# provider:
+#   name: aws
+#   runtime: python3.12
+
+# functions:
+#   hello:
+#     handler: handler.hello
+#     events:
+#       - httpApi:
+#           path: /
+#           method: get
+service: todo-api
+
+plugins:
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: python3.11
+  region: us-east-1
+  environment:
+    TASKS_TABLE: TasksTable
+  iam:
+    role:
+      statements:
+        - Effect: Allow
+          Action:
+            - dynamodb:PutItem
+            - dynamodb:GetItem
+            - dynamodb:DeleteItem
+          Resource:
+            Fn::GetAtt: [TasksTable, Arn]
+
+functions:
+  create:
+    handler: handler.create
+    events:
+      - http:
+          path: tasks
+          method: post
+  get:
+    handler: handler.get
+    events:
+      - http:
+          path: tasks/{id}
+          method: get
+  delete:
+    handler: handler.delete
+    events:
+      - http:
+          path: tasks/{id}
+          method: delete
+
+resources:
+  Resources:
+    TasksTable:
+      Type: AWS::DynamoDB::Table
+      Properties:
+        TableName: TasksTable
+        AttributeDefinitions:
+          - AttributeName: id
+            AttributeType: S
+        KeySchema:
+          - AttributeName: id
+            KeyType: HASH
+        BillingMode: PAY_PER_REQUEST
+
